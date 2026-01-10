@@ -1,0 +1,19 @@
+checks:
+  - name: "Pi-hole UI"
+    url: "http://192.168.2.51/admin"
+    timeout: 3
+    expect_status: [200, 302]
+    verify_tls: false
+
+  - name: "Example HTTPS"
+    url: "https://httpbin.org/status/200"
+    timeout: 3
+    expect_status: [200]
+    verify_tls: true
+
+  # Add more checks here as needed:
+  # - name: "Authentik"
+  #   url: "https://auth.timothyheverin.net/if/health"
+  #   timeout: 3
+  #   expect_status: [200]
+  #   verify_tls: true

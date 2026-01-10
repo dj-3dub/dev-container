@@ -1,0 +1,17 @@
+---
+- name: Install Docker (RHEL)
+  ansible.builtin.dnf:
+    name: docker
+    state: present
+
+- name: Ensure Docker service is enabled and started (RHEL)
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Add tim to docker group (RHEL)
+  ansible.builtin.user:
+    name: tim
+    groups: docker
+    append: yes

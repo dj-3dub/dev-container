@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: 'Toolbox Dashboards'
+    orgId: 1
+    folder: 'System Metrics'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      # This is the path INSIDE the container
+      path: /var/lib/grafana/dashboards

@@ -1,0 +1,32 @@
+---
+- name: Install fail2ban (Ubuntu)
+  ansible.builtin.apt:
+    name: fail2ban
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install fail2ban (RHEL)
+  ansible.builtin.dnf:
+    name: fail2ban
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Ensure SSH does not allow root login
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PermitRootLogin'
+    line: 'PermitRootLogin no'
+    state: present
+    backrefs: yes
+  notify: Restart sshd
+
+# Flip 'false' to 'true' only when you're 100% sure key auth works everywhere.
+- name: Optionally disable password auth (CAREFUL)
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+    state: present
+    backrefs: yes
+  notify: Restart sshd
+  when: false

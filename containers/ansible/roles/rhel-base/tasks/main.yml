@@ -1,0 +1,30 @@
+---
+- name: Update all packages (RHEL)
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+
+- name: Install baseline packages (RHEL)
+  ansible.builtin.dnf:
+    name:
+      - git
+      - curl
+      - wget
+      - htop
+      - vim
+      - net-tools
+      - unzip
+      - python3
+      - python3-pip
+    state: present
+
+- name: Set timezone to America/Chicago
+  ansible.builtin.command: timedatectl set-timezone America/Chicago
+  changed_when: false
+
+- name: Ensure tim user exists on RHEL
+  ansible.builtin.user:
+    name: tim
+    groups: wheel
+    append: yes
+    shell: /bin/bash

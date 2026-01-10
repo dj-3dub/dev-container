@@ -1,0 +1,3 @@
+---
+zabbix_server_host: 192.168.2.70   # IP of your Zabbix server container
+zabbix_agent_hostname: "{{ inventory_hostname }}"

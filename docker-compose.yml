@@ -1,0 +1,211 @@
+services:
+  # ---------- Arcane (The Manager) ----------
+  arcane:
+    image: ghcr.io/getarcaneapp/arcane:latest
+    container_name: arcane
+    restart: unless-stopped
+    ports:
+      - 3552:3552
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - arcane-data:/app/data
+    env_file:
+      - ./Arcane/.env
+    networks:
+      - toolbox-net
+    profiles: ["dev"]
+
+  # ---------- Standard Dev Environments ----------
+  debian:
+    build:
+      context: .
+      dockerfile: ./containers/debian/Dockerfile
+    container_name: dev-debian
+    network_mode: "host"
+    pid: "host"
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_PTRACE
+    working_dir: /workspace
+    volumes:
+      - ./containers/debian:/workspace:z
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./containers/debian/.bashrc:/root/.bashrc:z
+    entrypoint: ["tail", "-f", "/dev/null"]
+    profiles: ["dev"]
+
+  ubuntu:
+    build:
+      context: .
+      dockerfile: ./containers/ubuntu/Dockerfile
+    container_name: dev-ubuntu
+    network_mode: "host"
+    pid: "host"
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_PTRACE
+    working_dir: /workspace
+    volumes:
+      - ./containers/ubuntu:/workspace:z
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./containers/ubuntu/.bashrc:/root/.bashrc:z
+    entrypoint: ["tail", "-f", "/dev/null"]
+    profiles: ["dev"]
+
+  python:
+    image: python:3.14-slim
+    container_name: dev-python
+    working_dir: /workspace
+    volumes: ["./containers/python:/workspace"]
+    networks: ["toolbox-net"]
+    entrypoint: ["tail", "-f", "/dev/null"]
+    profiles: ["dev"]
+
+  go:
+    image: golang:1.25.5
+    container_name: dev-go
+    working_dir: /workspace
+    volumes: ["./containers/go:/workspace"]
+    networks: ["toolbox-net"]
+    entrypoint: ["tail", "-f", "/dev/null"]
+    profiles: ["dev"]
+
+  dotnet:
+    image: mcr.microsoft.com/dotnet/sdk:10.0
+    container_name: dev-dotnet
+    profiles: ["dotnet"]
+    working_dir: /workspace
+    volumes:
+      - ./containers/dotnet:/workspace:z
+    networks:
+      - toolbox-net
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+  rust:
+    image: rust:latest
+    container_name: dev-rust
+    working_dir: /workspace
+    volumes: ["./containers/rust:/workspace"]
+    networks: ["toolbox-net"]
+    entrypoint: ["tail", "-f", "/dev/null"]
+    profiles: ["dev"]
+
+  # ---------- Specialized Dev Tools ----------
+  powershell:
+    image: mcr.microsoft.com/powershell:latest
+    container_name: dev-powershell
+    volumes: ["./containers/powershell:/workspace"]
+    entrypoint: ["tail", "-f", "/dev/null"]
+    profiles: ["dev"]
+
+  aws:
+    image: amazon/aws-cli:latest
+    container_name: dev-aws
+    volumes: ["./containers/aws:/root/.aws"]
+    entrypoint: ["tail", "-f", "/dev/null"]
+    profiles: ["dev"]
+
+  ansible:
+    image: cytopia/ansible:latest
+    container_name: dev-ansible
+    profiles: ["dev"]
+    working_dir: /workspace
+    volumes:
+      - ./containers/ansible:/workspace:z
+      - ${HOME}/.ssh:/root/.ssh:ro
+    networks:
+      - toolbox-net
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+  terraform:
+    image: hashicorp/terraform:1.9
+    container_name: dev-terraform
+    profiles: ["dev"]
+    working_dir: /workspace
+    volumes:
+      - ./containers/terraform:/workspace:z
+      - ${HOME}/.aws:/root/.aws:ro
+      - ${HOME}/.ssh:/root/.ssh:ro
+    networks:
+      - toolbox-net
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+  wireshark:
+    image: lscr.io/linuxserver/wireshark:latest
+    container_name: dev-wireshark
+    network_mode: "host"
+    cap_add: [NET_ADMIN]
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TITLE=Toolbox-Wireshark
+    volumes: ["./containers/wireshark/config:/config"]
+    profiles: ["dev"]
+
+  # ---------- Jenkins CI ----------
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    container_name: jenkins
+    ports: ["8081:8080", "50000:50000"]
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks: ["toolbox-net"]
+    profiles: ["ci"]
+
+  # ---------- Monitoring Stack ----------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: monitoring-prometheus
+    ports: ["9091:9090"]
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus"]
+    networks: ["toolbox-net"]
+    profiles: ["monitoring"]
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: monitoring-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards_json:/etc/grafana/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/dashboards/node-exporter.json
+    networks:
+      - toolbox-net
+    profiles: ["monitoring"]
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: monitoring-node-exporter
+    volumes: ["/proc:/host/proc:ro", "/sys:/host/sys:ro", "/:/rootfs:ro"]
+    networks: ["toolbox-net"]
+    profiles: ["monitoring"]
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: monitoring-cadvisor
+    volumes: ["/:/rootfs:ro", "/var/run:/var/run:ro", "/sys:/sys:ro", "/var/lib/docker/:/var/lib/docker:ro"]
+    networks: ["toolbox-net"]
+    profiles: ["monitoring"]
+
+networks:
+  toolbox-net:
+    driver: bridge
+
+volumes:
+  jenkins_home:
+  arcane-data:
+  prometheus-data:
+  grafana-data:

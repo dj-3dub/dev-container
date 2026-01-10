@@ -1,0 +1,4 @@
+---
+- name: Monitoring agent placeholder
+  ansible.builtin.debug:
+    msg: "Monitoring agent install not yet implemented."

@@ -1,0 +1,18 @@
+---
+- name: Install Docker (Ubuntu)
+  ansible.builtin.apt:
+    name: docker.io
+    state: present
+    update_cache: yes
+
+- name: Ensure Docker service is enabled and started (Ubuntu)
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Add tim to docker group (Ubuntu)
+  ansible.builtin.user:
+    name: tim
+    groups: docker
+    append: yes

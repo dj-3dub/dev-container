@@ -1,0 +1,20 @@
+---
+- name: Install dev tools (Ubuntu)
+  ansible.builtin.apt:
+    name:
+      - git
+      - make
+      - jq
+      - tree
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install dev tools (RHEL)
+  ansible.builtin.dnf:
+    name:
+      - git
+      - make
+      - jq
+      - tree
+    state: present
+  when: ansible_os_family == "RedHat"

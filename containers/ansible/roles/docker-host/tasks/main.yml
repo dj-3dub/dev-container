@@ -1,0 +1,8 @@
+---
+- name: Install Docker on Ubuntu hosts
+  ansible.builtin.include_tasks: ubuntu.yml
+  when: ansible_os_family == "Debian"
+
+- name: Install Docker on RHEL hosts
+  ansible.builtin.include_tasks: rhel.yml
+  when: ansible_os_family == "RedHat"

@@ -1,0 +1,35 @@
+---
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Upgrade all packages
+  ansible.builtin.apt:
+    upgrade: dist
+    autoremove: yes
+
+- name: Install baseline packages (Ubuntu)
+  ansible.builtin.apt:
+    name:
+      - git
+      - curl
+      - wget
+      - htop
+      - vim
+      - net-tools
+      - unzip
+      - python3
+      - python3-pip
+    state: present
+
+- name: Set timezone to America/Chicago
+  ansible.builtin.command: timedatectl set-timezone America/Chicago
+  changed_when: false
+
+- name: Ensure tim user exists on Ubuntu
+  ansible.builtin.user:
+    name: tim
+    groups: sudo
+    append: yes
+    shell: /bin/bash

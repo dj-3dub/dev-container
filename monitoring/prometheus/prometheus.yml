@@ -1,0 +1,18 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  # The RHEL Host metrics
+  - job_name: 'rhel-system'
+    static_configs:
+      - targets: ['monitoring-node-exporter:9100']
+
+  # Docker Container resource metrics
+  - job_name: 'docker-containers'
+    static_configs:
+      - targets: ['monitoring-cadvisor:8080']
+
+  # Self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

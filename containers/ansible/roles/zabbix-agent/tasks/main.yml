@@ -1,0 +1,18 @@
+---
+- name: Install Zabbix agent2
+  ansible.builtin.yum:
+    name: zabbix-agent2
+    state: present
+
+- name: Deploy Zabbix agent config
+  ansible.builtin.template:
+    src: zabbix_agent2.conf.j2
+    dest: /etc/zabbix/zabbix_agent2.conf
+  notify:
+    - restart zabbix-agent2
+
+- name: Ensure Zabbix agent is started
+  ansible.builtin.service:
+    name: zabbix-agent2
+    state: started
+    enabled: true
