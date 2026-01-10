@@ -1,3 +1,0 @@
-lab-health lab.http_checks.total 2
-lab-health lab.http_checks.fail 1
-lab-health lab.http_health.ok 0
