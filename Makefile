@@ -1,52 +1,89 @@
-# ==========================================
-# 🛠️  Dev Toolbox Master Makefile - 2026
-# ==========================================
+# ==========================================================
+# 🛠️  Dev Toolbox Master Makefile — 2026
+# ==========================================================
 
-.PHONY: help up-dev up-mon up-all down ps nuke check \
-        debian-shell ubuntu-shell dotnet-shell tf-shell \
-        py-shell go-shell arcane-logs prune
+.PHONY: help \
+        ubuntu debian \
+        ubuntu-shell debian-shell \
+        up-dev up-mon up-all down rebuild nuke \
+        check ps logs \
+        tf-shell dotnet-shell py-shell go-shell rust-shell \
+        doctor doctor-fix doctor-report doctor-docker-cache \
+        prune
 
-# -------------------------
+# ----------------------------------------------------------
+# 🧠 Configuration
+# ----------------------------------------------------------
+
+UBUNTU_IMAGE := toolbox-ubuntu
+DEBIAN_IMAGE := toolbox-debian
+
+WORKDIR := /workspace
+
+# ----------------------------------------------------------
 # 📖 Help & Discovery
-# -------------------------
+# ----------------------------------------------------------
+
 help:
-	@echo "🌟 Dev Toolbox - SRE Control Center"
 	@echo ""
-	@echo "🚀 Launchers:"
-	@echo "  make up-dev       - Start core Dev tools (Arcane, Python, Go, etc.)"
-	@echo "  make up-mon       - Start Monitoring (Prom/Grafana/cAdvisor)"
-	@echo "  make up-all       - Start everything (Dev + Mon + CI)"
+	@echo "🌟 Dev Toolbox — SRE / Platform Control Center"
 	@echo ""
-	@echo "🐚 Shell Access:"
-	@echo "  make debian-shell - Primary Troubleshooter (btop/nmap)"
-	@echo "  make tf-shell     - Terraform CLI Workspace"
-	@echo "  make dotnet-shell - .NET 10 environment"
+	@echo "🐧 Ephemeral Shells (local images):"
+	@echo "  make ubuntu        - Ubuntu toolbox (zsh)"
+	@echo "  make debian        - Debian toolbox (zsh)"
 	@echo ""
-	@echo "🩺 Maintenance:"
-	@echo "  make check        - Health & Memory audit for ALL containers"
-	@echo "  make prune        - 🧹 Clean orphaned resources"
+	@echo "🚀 Long-Running Stacks (docker compose):"
+	@echo "  make up-dev        - Dev toolchains"
+	@echo "  make up-mon        - Monitoring stack"
+	@echo "  make up-all        - Everything"
+	@echo "  make down          - Stop all stacks"
+	@echo ""
+	@echo "🐚 Attach to Running Containers:"
+	@echo "  make ubuntu-shell  - Attach to dev-ubuntu"
+	@echo "  make debian-shell  - Attach to dev-debian"
+	@echo "  make tf-shell      - Terraform workspace"
+	@echo "  make dotnet-shell  - .NET environment"
+	@echo ""
+	@echo "🩺 Diagnostics & Doctors:"
+	@echo "  make check         - Container health overview"
+	@echo "  make doctor        - Run vm-doctor"
+	@echo "  make doctor-fix    - Auto-remediate issues"
+	@echo "  make doctor-report - View latest report"
+	@echo ""
+	@echo "♻️  Maintenance:"
+	@echo "  make prune         - Clean unused Docker resources"
+	@echo "  make nuke          - 💥 Destroy all stacks & volumes"
+	@echo ""
 
-# -------------------------
-# 🩺 Health & Verification
-# -------------------------
+# ----------------------------------------------------------
+# 🐧 Ephemeral Toolbox Shells (Compose-free)
+# ----------------------------------------------------------
 
-check:
-	@echo "🏥 Checking Jungle Health..."
-	@echo "--------------------------------"
-	@for container in arcane dev-debian dev-ubuntu dev-python dev-go dev-dotnet dev-rust dev-terraform dev-aws dev-powershell dev-ansible dev-wireshark monitoring-prometheus monitoring-grafana monitoring-node-exporter monitoring-cadvisor; do \
-		if docker ps --format '{{.Names}}' | grep -q "$$container"; then \
-			echo "✅ $$container: RUNNING"; \
-		else \
-			echo "❌ $$container: NOT RUNNING"; \
-		fi \
-	done
-	@echo "--------------------------------"
-	@echo "📊 Resource Overview:"
-	@docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.CPUPerc}}"
+ubuntu:
+	@echo "🐧 Ubuntu toolbox (HOST diagnostics enabled)..."
+	docker build -t $(UBUNTU_IMAGE) -f containers/ubuntu/Dockerfile containers/ubuntu
+	docker run --rm -it --name dev-ubuntu \
+		--privileged \
+		--pid=host \
+		-v /:/host \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v "$$(pwd)":$(WORKDIR) -w $(WORKDIR) \
+		$(UBUNTU_IMAGE)
 
-# -------------------------
-# 🛰️  Deployment Commands
-# -------------------------
+debian:
+	@echo "🧰 Debian toolbox (HOST diagnostics enabled)..."
+	docker build -t $(DEBIAN_IMAGE) -f containers/debian/Dockerfile containers/debian
+	docker run --rm -it --name dev-debian \
+		--privileged \
+		--pid=host \
+		-v /:/host \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v "$$(pwd)":$(WORKDIR) -w $(WORKDIR) \
+		$(DEBIAN_IMAGE)
+
+# ----------------------------------------------------------
+# 🚀 Docker Compose Stacks
+# ----------------------------------------------------------
 
 up-dev:
 	@echo "🚀 Starting Development Stacks..."
@@ -60,43 +97,76 @@ up-all:
 	@echo "🌐 Starting full SRE Jungle..."
 	docker compose --profile dev --profile monitoring --profile ci --profile dotnet --profile terraform up -d
 
-# -------------------------
-# 🐚 Tool Shells
-# -------------------------
+down:
+	docker compose --profile dev --profile monitoring --profile ci --profile dotnet --profile terraform stop
 
-debian-shell:
-	docker exec -it dev-debian bash
+rebuild: nuke
+	docker compose --profile dev --profile monitoring up -d --build
 
-ubuntu-shell:
-	docker exec -it dev-ubuntu bash
+# ----------------------------------------------------------
+# 🧪 Toolchain-Specific Shells
+# ----------------------------------------------------------
+
+tf-shell:
+	@echo "🏗️  Terraform workspace..."
+	docker exec -it dev-terraform sh
 
 dotnet-shell:
 	docker exec -it dev-dotnet bash
 
-tf-shell:
-	@echo "🏗️  Entering Terraform Workspace..."
-	docker exec -it dev-terraform sh
-
 py-shell:
 	docker exec -it dev-python python3
 
-arcane-logs:
-	docker logs -f arcane
+go-shell:
+	@echo "🐹 Go shell (ephemeral)..."
+	docker compose --profile dev run --rm --entrypoint bash go
 
-# -------------------------
+rust-shell:
+	@echo "🦀 Rust shell (ephemeral)..."
+	docker compose --profile dev run --rm --entrypoint bash rust
+
+# ----------------------------------------------------------
+# 🩺 Health, Diagnostics & Observability
+# ----------------------------------------------------------
+
+check:
+	@echo "🏥 Checking Jungle Health..."
+	@echo "--------------------------------"
+	@for c in arcane dev-debian dev-ubuntu dev-python dev-go dev-dotnet dev-rust dev-terraform dev-aws dev-powershell dev-ansible dev-wireshark monitoring-prometheus monitoring-grafana monitoring-node-exporter monitoring-cadvisor; do \
+		if docker ps --format '{{.Names}}' | grep -q "$$c"; then \
+			echo "✅ $$c: RUNNING"; \
+		else \
+			echo "❌ $$c: NOT RUNNING"; \
+		fi \
+	done
+	@echo "--------------------------------"
+	@docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.CPUPerc}}"
+
+# ----------------------------------------------------------
+# 🧑‍⚕️ vm-doctor (Diagnostics Toolkit)
+# ----------------------------------------------------------
+
+doctor:
+	@./bin/vm-doctor
+
+doctor-fix:
+	@./bin/vm-doctor -fix
+
+doctor-docker-cache:
+	@./bin/vm-doctor -docker-cache-prune
+
+doctor-report:
+	@ls -1t $$HOME/vm-doctor-reports/vm_doctor_*.txt | head -1 | xargs -r less
+
+# ----------------------------------------------------------
 # ♻️  Maintenance & Cleanup
-# -------------------------
+# ----------------------------------------------------------
 
 prune:
-	@echo "🧹 Removing orphaned containers and unused networks..."
+	@echo "🧹 Removing orphaned Docker resources..."
 	docker system prune -f
 
-down:
-	docker compose --profile dev --profile monitoring --profile ci --profile dotnet --profile terraform stop
-
 nuke:
-	@echo "☢️  NUKING ALL DATA (Volumes included)..."
+	@echo "☢️  NUKING ALL DATA (containers, volumes, networks)..."
 	docker compose --profile dev --profile monitoring --profile ci --profile dotnet --profile terraform down --volumes --remove-orphans
 
-rebuild: nuke
-	docker compose --profile dev --profile monitoring up -d --build

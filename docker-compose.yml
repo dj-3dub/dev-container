@@ -5,7 +5,7 @@ services:
     container_name: arcane
     restart: unless-stopped
     ports:
-      - 3552:3552
+      - "3552:3552"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - arcane-data:/app/data
@@ -30,9 +30,9 @@ services:
       - SYS_PTRACE
     working_dir: /workspace
     volumes:
-      - ./containers/debian:/workspace:z
+      - ./:/workspace
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./containers/debian/.bashrc:/root/.bashrc:z
+      - ./containers/debian/.bashrc:/root/.bashrc:ro
     entrypoint: ["tail", "-f", "/dev/null"]
     profiles: ["dev"]
 
@@ -50,9 +50,9 @@ services:
       - SYS_PTRACE
     working_dir: /workspace
     volumes:
-      - ./containers/ubuntu:/workspace:z
+      - ./:/workspace
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./containers/ubuntu/.bashrc:/root/.bashrc:z
+      - ./containers/ubuntu/.bashrc:/root/.bashrc:ro
     entrypoint: ["tail", "-f", "/dev/null"]
     profiles: ["dev"]
 
@@ -60,8 +60,10 @@ services:
     image: python:3.14-slim
     container_name: dev-python
     working_dir: /workspace
-    volumes: ["./containers/python:/workspace"]
-    networks: ["toolbox-net"]
+    volumes:
+      - ./:/workspace
+    networks:
+      - toolbox-net
     entrypoint: ["tail", "-f", "/dev/null"]
     profiles: ["dev"]
 
@@ -69,28 +71,23 @@ services:
     image: golang:1.25.5
     container_name: dev-go
     working_dir: /workspace
-    volumes: ["./containers/go:/workspace"]
-    networks: ["toolbox-net"]
-    entrypoint: ["tail", "-f", "/dev/null"]
-    profiles: ["dev"]
-
-  dotnet:
-    image: mcr.microsoft.com/dotnet/sdk:10.0
-    container_name: dev-dotnet
-    profiles: ["dotnet"]
-    working_dir: /workspace
     volumes:
-      - ./containers/dotnet:/workspace:z
+      - ./:/workspace
     networks:
       - toolbox-net
+    environment:
+      - PATH=/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     entrypoint: ["tail", "-f", "/dev/null"]
+    profiles: ["dev"]
 
   rust:
     image: rust:latest
     container_name: dev-rust
     working_dir: /workspace
-    volumes: ["./containers/rust:/workspace"]
-    networks: ["toolbox-net"]
+    volumes:
+      - ./:/workspace
+    networks:
+      - toolbox-net
     entrypoint: ["tail", "-f", "/dev/null"]
     profiles: ["dev"]
 
@@ -98,75 +95,100 @@ services:
   powershell:
     image: mcr.microsoft.com/powershell:latest
     container_name: dev-powershell
-    volumes: ["./containers/powershell:/workspace"]
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
     entrypoint: ["tail", "-f", "/dev/null"]
     profiles: ["dev"]
 
   aws:
     image: amazon/aws-cli:latest
     container_name: dev-aws
-    volumes: ["./containers/aws:/root/.aws"]
+    volumes:
+      - ${HOME}/.aws:/root/.aws:ro
+      - ./:/workspace
+    working_dir: /workspace
     entrypoint: ["tail", "-f", "/dev/null"]
     profiles: ["dev"]
 
   ansible:
     image: cytopia/ansible:latest
     container_name: dev-ansible
-    profiles: ["dev"]
     working_dir: /workspace
     volumes:
-      - ./containers/ansible:/workspace:z
+      - ./:/workspace
       - ${HOME}/.ssh:/root/.ssh:ro
     networks:
       - toolbox-net
     entrypoint: ["tail", "-f", "/dev/null"]
+    profiles: ["dev"]
 
   terraform:
     image: hashicorp/terraform:1.9
     container_name: dev-terraform
-    profiles: ["dev"]
     working_dir: /workspace
     volumes:
-      - ./containers/terraform:/workspace:z
+      - ./:/workspace
       - ${HOME}/.aws:/root/.aws:ro
       - ${HOME}/.ssh:/root/.ssh:ro
     networks:
       - toolbox-net
     entrypoint: ["tail", "-f", "/dev/null"]
+    profiles: ["dev"]
+
+  dotnet:
+    image: mcr.microsoft.com/dotnet/sdk:10.0
+    container_name: dev-dotnet
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    networks:
+      - toolbox-net
+    entrypoint: ["tail", "-f", "/dev/null"]
+    profiles: ["dotnet"]
 
   wireshark:
     image: lscr.io/linuxserver/wireshark:latest
     container_name: dev-wireshark
     network_mode: "host"
-    cap_add: [NET_ADMIN]
+    cap_add:
+      - NET_ADMIN
     environment:
       - PUID=1000
       - PGID=1000
       - TITLE=Toolbox-Wireshark
-    volumes: ["./containers/wireshark/config:/config"]
+    volumes:
+      - ./containers/wireshark/config:/config
     profiles: ["dev"]
 
   # ---------- Jenkins CI ----------
   jenkins:
     image: jenkins/jenkins:lts-jdk17
     container_name: jenkins
-    ports: ["8081:8080", "50000:50000"]
+    ports:
+      - "8081:8080"
+      - "50000:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
-    networks: ["toolbox-net"]
+    networks:
+      - toolbox-net
     profiles: ["ci"]
 
   # ---------- Monitoring Stack ----------
   prometheus:
     image: prom/prometheus:latest
     container_name: monitoring-prometheus
-    ports: ["9091:9090"]
+    ports:
+      - "9091:9090"
     volumes:
       - ./monitoring/prometheus:/etc/prometheus
       - prometheus-data:/prometheus
-    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus"]
-    networks: ["toolbox-net"]
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    networks:
+      - toolbox-net
     profiles: ["monitoring"]
 
   grafana:
@@ -189,15 +211,24 @@ services:
   node-exporter:
     image: prom/node-exporter:latest
     container_name: monitoring-node-exporter
-    volumes: ["/proc:/host/proc:ro", "/sys:/host/sys:ro", "/:/rootfs:ro"]
-    networks: ["toolbox-net"]
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - toolbox-net
     profiles: ["monitoring"]
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: monitoring-cadvisor
-    volumes: ["/:/rootfs:ro", "/var/run:/var/run:ro", "/sys:/sys:ro", "/var/lib/docker/:/var/lib/docker:ro"]
-    networks: ["toolbox-net"]
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - toolbox-net
     profiles: ["monitoring"]
 
 networks:
