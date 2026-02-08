@@ -1,18 +1,11 @@
 global:
-  scrape_interval: 15s
+  scrape_interval: 5s # Fast scraping for real-time troubleshooting
 
 scrape_configs:
-  # The RHEL Host metrics
-  - job_name: 'rhel-system'
+  - job_name: 'portable-toolbox-host'
     static_configs:
-      - targets: ['monitoring-node-exporter:9100']
+      - targets: ['node-exporter:9100']
 
-  # Docker Container resource metrics
-  - job_name: 'docker-containers'
+  - job_name: 'container-stats'
     static_configs:
-      - targets: ['monitoring-cadvisor:8080']
-
-  # Self-monitoring
-  - job_name: 'prometheus'
-    static_configs:
-      - targets: ['localhost:9090']
+      - targets: ['cadvisor:8080']
