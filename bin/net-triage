@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+TARGET="${1:-}"
+PORT="${2:-443}"
+
+if [ -z "$TARGET" ]; then
+  echo "Usage: net-triage <host> [port]"
+  exit 1
+fi
+
+timestamp() { date --iso-8601=seconds 2>/dev/null || date; }
+
+echo "========================================="
+echo " 🔍 NETWORK TRIAGE REPORT: $TARGET:$PORT"
+echo "========================================="
+echo
+
+echo "---- DNS ----"
+dig +short "$TARGET" || true
+dig +short "$TARGET" @1.1.1.1 || true
+echo
+
+echo "---- Route ----"
+# resolve IP (try host resolver, then public resolver)
+IP="$(getent ahosts "$TARGET" | awk '{print $1; exit}' || true)"
+if [ -z "$IP" ]; then
+  IP="$(dig +short "$TARGET" @1.1.1.1 | head -n1 || true)"
+fi
+if [ -z "$IP" ]; then
+  IP="$(dig +short "$TARGET" @8.8.8.8 | head -n1 || true)"
+fi
+
+if [ -n "$IP" ]; then
+  echo "Resolved IP: $IP"
+  ip route get "$IP" || true
+else
+  echo "Could not resolve an IP for ${TARGET}; skipping ip route check"
+fi
+echo
+
+echo "---- TCP Connectivity ----"
+nc -vz -w 5 "$TARGET" "$PORT" || true
+echo
+
+echo "---- TLS Handshake ----"
+timeout 7 openssl s_client -connect "$TARGET:$PORT" -servername "$TARGET" < /dev/null 2>/dev/null \
+  | grep -E "subject=|issuer=|Verify return code" || true
+echo
+
+echo "---- Path Quality (MTR) ----"
+if command -v mtr >/dev/null 2>&1; then
+  mtr -rwbc 20 "$TARGET" || true
+else
+  echo "mtr not installed in the image"
+fi
+echo
+
+echo "---- HTTP Check ----"
+curl -I --max-time 5 "https://$TARGET" || true
+echo
+
+echo "========================================="
+echo " Done."
+echo "========================================="

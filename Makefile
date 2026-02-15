@@ -3,8 +3,8 @@
 # ==========================================================
 
 .PHONY: help \
-        ubuntu debian \
-        ubuntu-shell debian-shell \
+        ubuntu debian kali build-kali-full build-kali-proxy \
+        ubuntu-shell debian-shell kali-shell \
         up-dev up-mon up-all down rebuild nuke \
         check ps logs \
         tf-shell dotnet-shell py-shell go-shell rust-shell \
@@ -17,6 +17,8 @@
 
 UBUNTU_IMAGE := toolbox-ubuntu
 DEBIAN_IMAGE := toolbox-debian
+KALI_IMAGE := toolbox-kali
+KALI_CONTEXT := containers/kali
 
 WORKDIR := /workspace
 
@@ -31,6 +33,7 @@ help:
 	@echo "🐧 Ephemeral Shells (local images):"
 	@echo "  make ubuntu        - Ubuntu toolbox (zsh)"
 	@echo "  make debian        - Debian toolbox (zsh)"
+	@echo "  make kali          - Kali (network-focused) interactive shell"
 	@echo ""
 	@echo "🚀 Long-Running Stacks (docker compose):"
 	@echo "  make up-dev        - Dev toolchains"
@@ -41,8 +44,9 @@ help:
 	@echo "🐚 Attach to Running Containers:"
 	@echo "  make ubuntu-shell  - Attach to dev-ubuntu"
 	@echo "  make debian-shell  - Attach to dev-debian"
-	@echo "  make tf-shell      - Terraform workspace"
-	@echo "  make dotnet-shell  - .NET environment"
+	@echo "  make kali-shell    - Attach to dev-kali"
+	@echo "  make tf-shell      - Attach to dev-terraform"
+	@echo "  make dotnet-shell  - Attach to dev-dotnet"
 	@echo ""
 	@echo "🩺 Diagnostics & Doctors:"
 	@echo "  make check         - Container health overview"
@@ -58,7 +62,6 @@ help:
 # ----------------------------------------------------------
 # 🐧 Ephemeral Toolbox Shells (Compose-free)
 # ----------------------------------------------------------
-
 ubuntu:
 	@echo "🐧 Ubuntu toolbox (HOST diagnostics enabled)..."
 	docker build -t $(UBUNTU_IMAGE) -f containers/ubuntu/Dockerfile containers/ubuntu
@@ -81,6 +84,37 @@ debian:
 		-v "$$(pwd)":$(WORKDIR) -w $(WORKDIR) \
 		$(DEBIAN_IMAGE)
 
+# ----------------------------------------------------------
+# 🕵️ Kali Toolbox
+# ----------------------------------------------------------
+kali:
+	@echo "🕵️ Kali toolbox (HOST diagnostics enabled)..."
+	docker build -t $(KALI_IMAGE) -f containers/kali/Dockerfile containers/kali
+	-@docker rm -f dev-kali 2>/dev/null || true
+	docker run --rm -it --name dev-kali \
+		--privileged \
+		--pid=host \
+		-v /:/host \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v "$$(pwd)":$(WORKDIR) -w $(WORKDIR) \
+		$(KALI_IMAGE) /bin/bash
+
+# start Kali in the background (persistent toolbox)
+kali-up:
+	@echo "🕵️ Starting Kali (background)..."
+	docker build -t $(KALI_IMAGE) -f containers/kali/Dockerfile containers/kali
+	docker run -d --name dev-kali \
+		--privileged \
+		--pid=host \
+		-v /:/host \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v "$$(pwd)":$(WORKDIR) -w $(WORKDIR) \
+		$(KALI_IMAGE) tail -f /dev/null
+
+# attach to a running Kali container
+kali-shell:
+	@echo "🔐 Entering Kali shell..."
+	docker exec -it dev-kali bash || echo "dev-kali not running. Try: make kali or make kali-up"
 # ----------------------------------------------------------
 # 🚀 Docker Compose Stacks
 # ----------------------------------------------------------
@@ -132,7 +166,7 @@ rust-shell:
 check:
 	@echo "🏥 Checking Jungle Health..."
 	@echo "--------------------------------"
-	@for c in arcane dev-debian dev-ubuntu dev-python dev-go dev-dotnet dev-rust dev-terraform dev-aws dev-powershell dev-ansible dev-wireshark monitoring-prometheus monitoring-grafana monitoring-node-exporter monitoring-cadvisor; do \
+	@for c in arcane dev-debian dev-ubuntu dev-kali dev-python dev-go dev-dotnet dev-rust dev-terraform dev-aws dev-powershell dev-ansible dev-wireshark monitoring-prometheus monitoring-grafana monitoring-node-exporter monitoring-cadvisor; do \
 		if docker ps --format '{{.Names}}' | grep -q "$$c"; then \
 			echo "✅ $$c: RUNNING"; \
 		else \
@@ -157,7 +191,28 @@ doctor-docker-cache:
 
 doctor-report:
 	@ls -1t $$HOME/vm-doctor-reports/vm_doctor_*.txt | head -1 | xargs -r less
-
+# ----------------------------------------------------------
+# 🔍 Triage — run bin/net-triage inside dev-kali (auto-starts Kali if needed)
+# Usage:
+#   make triage TARGET=example.com
+#   make triage TARGET=example.com PORT=8443
+# ----------------------------------------------------------
+triage:
+	@if [ -z "$(TARGET)" ]; then \
+		echo "Usage: make triage TARGET=example.com [PORT=443]"; \
+		exit 1; \
+	fi
+	@echo "🚑 Running triage for $(TARGET):${PORT:-443}"
+	# start background dev-kali if not running
+	@if ! docker ps --format '{{.Names}}' | grep -q '^dev-kali$$'; then \
+		echo "dev-kali not running — starting background container..."; \
+		docker build -t $(KALI_IMAGE) -f containers/kali/Dockerfile containers/kali; \
+		docker run -d --name dev-kali --privileged --pid=host -v /:/host -v /var/run/docker.sock:/var/run/docker.sock -v "$$(pwd)":$(WORKDIR) -w $(WORKDIR) $(KALI_IMAGE) tail -f /dev/null; \
+	else \
+		echo "dev-kali already running"; \
+	fi
+	# run the triage script inside Kali
+	docker exec -it dev-kali bash -lc "/workspace/bin/net-triage $(TARGET) ${PORT:-443}"
 # ----------------------------------------------------------
 # ♻️  Maintenance & Cleanup
 # ----------------------------------------------------------
@@ -169,4 +224,3 @@ prune:
 nuke:
 	@echo "☢️  NUKING ALL DATA (containers, volumes, networks)..."
 	docker compose --profile dev --profile monitoring --profile ci --profile dotnet --profile terraform down --volumes --remove-orphans
-

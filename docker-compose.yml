@@ -56,6 +56,26 @@ services:
     entrypoint: ["tail", "-f", "/dev/null"]
     profiles: ["dev"]
 
+# ---------- Kali Toolbox ----------
+  kali:
+    build:
+      context: ./containers/kali
+      dockerfile: Dockerfile
+    container_name: dev-kali
+    network_mode: "host"
+    pid: "host"
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_PTRACE
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /:/host:ro
+    entrypoint: ["tail", "-f", "/dev/null"]
+
   python:
     image: python:3.14-slim
     container_name: dev-python

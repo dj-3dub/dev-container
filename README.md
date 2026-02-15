@@ -18,21 +18,15 @@ workflows, incident response testing, and homelab platform engineering.
 
 Start core development and troubleshooting containers:
 
-``` bash
 make up-dev
-```
 
 Start monitoring stack:
 
-``` bash
 make up-mon
-```
 
 Start entire environment:
 
-``` bash
 make up-all
-```
 
 ------------------------------------------------------------------------
 
@@ -45,193 +39,81 @@ make up-all
   Kali        Security, authentication, and protocol diagnostics
   Netshoot    Baseline network debugging container
 
-------------------------------------------------------------------------
-
 ### 🐚 Shell Access
 
-``` bash
-make debian-shell
-make ubuntu-shell
-make kali-shell
-make netshoot-shell
-```
+make debian-shell make ubuntu-shell make kali-shell make netshoot-shell
 
 ------------------------------------------------------------------------
 
 ## 💻 Development Runtime Containers
 
-The toolbox provides isolated runtime environments for automation,
-scripting, and application development:
-
--   Python
--   Go
--   Rust
--   .NET
--   PowerShell
--   Terraform
--   Ansible
--   VS Code Server
+Python, Go, Rust, .NET, PowerShell, Terraform, Ansible, VS Code Server
 
 ------------------------------------------------------------------------
 
 ## 📊 Monitoring Stack
 
   Component       Purpose
-  --------------- -------------------------------
+  --------------- --------------------
   Prometheus      Metrics collection
-  Grafana         Visualization & dashboards
-  Node Exporter   Host system metrics
-  cAdvisor        Container performance metrics
+  Grafana         Visualization
+  Node Exporter   Host metrics
+  cAdvisor        Container metrics
 
-### Monitoring URLs
-
--   Grafana → http://localhost:3000
--   Prometheus → http://localhost:9091
+Grafana → http://localhost:3000\
+Prometheus → http://localhost:9091
 
 ------------------------------------------------------------------------
 
-## 🔧 Maintenance Commands
+## 🚑 Automated Incident Triage
 
-Rebuild troubleshooting containers:
+make triage TARGET=service.internal make triage TARGET=service.internal
+PORT=8443
 
-``` bash
-make rebuild-toolbox
-```
+Layers tested:
 
-Rebuild entire stack without deleting volumes:
+1.  DNS validation
+2.  Routing verification
+3.  TCP connectivity
+4.  TLS inspection
+5.  Path quality
+6.  HTTP response
 
-``` bash
-make rebuild-soft
-```
+Failure domain identification:
 
-Full reset (including volumes):
+  Symptom      Likely Cause
+  ------------ --------------------------
+  DNS fails    resolver / split horizon
+  TCP fails    firewall
+  TLS fails    certificate / SNI
+  HTTP fails   application
+  Latency      routing
 
-``` bash
-make nuke
-```
-
-Stop all services:
-
-``` bash
-make down
-```
-
-Check container health and resource usage:
-
-``` bash
-make check
-```
+Goal: reduce mean-time-to-isolation (MTTI).
 
 ------------------------------------------------------------------------
 
-## 🧪 Container Architecture
+## 🧩 Platform Engineering Philosophy
 
-    Host
-     ├ Docker Compose
-     │
-     ├ Troubleshooters
-     │    ├ Debian
-     │    ├ Ubuntu
-     │    ├ Kali
-     │    └ Netshoot
-     │
-     ├ Dev Runtimes
-     │    ├ Python / Go / Rust / .NET
-     │    ├ Terraform / Ansible
-     │    ├ PowerShell
-     │
-     ├ Monitoring
-     │    ├ Prometheus
-     │    ├ Grafana
-     │    ├ Node Exporter
-     │    └ cAdvisor
-     │
-     └ CI
-          └ Jenkins
+Tools exist where incidents are analyzed --- not installed during
+incidents.
 
-------------------------------------------------------------------------
+  Container   Role
+  ----------- -------------------------
+  Netshoot    First responder
+  Debian      Infrastructure engineer
+  Kali        Security escalation
+  Ubuntu      Platform engineer
 
-## 🔐 Environment Configuration
-
-Create a `.env` file in the repository root:
-
-``` bash
-UID=1000
-GID=1000
-VSCODE_PORT=8443
-VSCODE_PASSWORD=admin
-```
-
-------------------------------------------------------------------------
-
-## 🧭 Troubleshooting Workflows
-
-### Network Connectivity Triage
-
-Recommended workflow:
-
-1.  Start with Netshoot for baseline diagnostics
-2.  Use Debian container for deep network analysis
-3.  Validate routing, DNS, firewall, and port reachability
-4.  Escalate to Kali if authentication or security controls are
-    suspected
-
-------------------------------------------------------------------------
-
-### Authentication & Identity Troubleshooting
-
-Use Kali container for:
-
--   Kerberos validation
--   LDAP / Active Directory enumeration
--   SMB authentication testing
--   TLS certificate inspection
--   SSO and reverse proxy validation
-
-------------------------------------------------------------------------
-
-### Platform / Infrastructure Debugging
-
-Use Ubuntu container for:
-
--   Automation scripting
--   Terraform testing
--   Configuration validation
--   DevOps workflow testing
--   Application runtime debugging
+Workflow: Alert → Isolation → Domain Expert → Resolution
 
 ------------------------------------------------------------------------
 
 ## 🎯 Design Goals
 
 -   Reproducible engineering environments
--   Rapid troubleshooting container access
--   Runtime isolation between tooling environments
--   Minimal host dependency footprint
--   Modular container expansion capability
--   Fast environment rebuild and reset workflows
-
-------------------------------------------------------------------------
-
-## 🧪 Personal Workflow Notes
-
-Typical usage pattern:
-
-  Task                        Recommended Container
-  --------------------------- ------------------------------
-  Network triage              Netshoot → Debian
-  Identity / authentication   Kali
-  Automation / scripting      Ubuntu
-  Development runtimes        Language-specific containers
-  Observability testing       Monitoring stack
-
-------------------------------------------------------------------------
-
-## 📝 Notes
-
-This toolbox is a personal engineering environment and evolves alongside
-homelab development, platform engineering experimentation, and
-infrastructure reliability testing.
-
-Tooling, containers, and workflows are regularly refined as new
-requirements and technologies are explored.
+-   Rapid troubleshooting access
+-   Runtime isolation
+-   Minimal host dependency
+-   Modular expansion
+-   Fast rebuild/reset workflows
