@@ -2,14 +2,19 @@
 # 🛠️  Dev Toolbox Master Makefile — 2026
 # ==========================================================
 
+.DEFAULT_GOAL := help
+
+SHELL := /bin/bash
+.SHELLFLAGS := -eu -o pipefail -c
+
 .PHONY: help \
-        ubuntu debian kali build-kali-full build-kali-proxy \
+        ubuntu debian kali kali-up \
         ubuntu-shell debian-shell kali-shell \
         up-dev up-mon up-all down rebuild nuke \
-        check ps logs \
+        check ps logs preflight demo \
         tf-shell dotnet-shell py-shell go-shell rust-shell \
         doctor doctor-fix doctor-report doctor-docker-cache \
-        prune
+        triage prune
 
 # ----------------------------------------------------------
 # 🧠 Configuration
@@ -22,6 +27,17 @@ KALI_CONTEXT := containers/kali
 
 WORKDIR := /workspace
 
+COMPOSE_PROFILES := --profile dev --profile monitoring --profile ci --profile dotnet --profile terraform
+DEV_PROFILES := --profile dev --profile dotnet --profile terraform
+
+COMMON_DOCKER_ARGS := \
+	--privileged \
+	--pid=host \
+	-v /:/host \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v "$$(pwd)":$(WORKDIR) \
+	-w $(WORKDIR)
+
 # ----------------------------------------------------------
 # 📖 Help & Discovery
 # ----------------------------------------------------------
@@ -30,98 +46,105 @@ help:
 	@echo ""
 	@echo "🌟 Dev Toolbox — SRE / Platform Control Center"
 	@echo ""
+	@echo "🧪 Validation:"
+	@echo "  make preflight     - Verify Docker / Compose prerequisites"
+	@echo "  make doctor        - Run vm-doctor"
+	@echo "  make doctor-fix    - Auto-remediate issues"
+	@echo "  make doctor-report - View latest doctor report"
+	@echo ""
 	@echo "🐧 Ephemeral Shells (local images):"
 	@echo "  make ubuntu        - Ubuntu toolbox (zsh)"
 	@echo "  make debian        - Debian toolbox (zsh)"
 	@echo "  make kali          - Kali (network-focused) interactive shell"
+	@echo ""
+	@echo "🕵️ Kali Background / Triage:"
+	@echo "  make kali-up       - Start Kali in the background"
+	@echo "  make kali-shell    - Attach to running Kali container"
+	@echo "  make triage TARGET=example.com [PORT=443]"
 	@echo ""
 	@echo "🚀 Long-Running Stacks (docker compose):"
 	@echo "  make up-dev        - Dev toolchains"
 	@echo "  make up-mon        - Monitoring stack"
 	@echo "  make up-all        - Everything"
 	@echo "  make down          - Stop all stacks"
+	@echo "  make rebuild       - Rebuild from clean state"
 	@echo ""
 	@echo "🐚 Attach to Running Containers:"
-	@echo "  make ubuntu-shell  - Attach to dev-ubuntu"
-	@echo "  make debian-shell  - Attach to dev-debian"
-	@echo "  make kali-shell    - Attach to dev-kali"
 	@echo "  make tf-shell      - Attach to dev-terraform"
 	@echo "  make dotnet-shell  - Attach to dev-dotnet"
+	@echo "  make py-shell      - Start Python REPL in dev-python"
+	@echo "  make go-shell      - Ephemeral Go shell"
+	@echo "  make rust-shell    - Ephemeral Rust shell"
 	@echo ""
-	@echo "🩺 Diagnostics & Doctors:"
+	@echo "🩺 Health & Observability:"
 	@echo "  make check         - Container health overview"
-	@echo "  make doctor        - Run vm-doctor"
-	@echo "  make doctor-fix    - Auto-remediate issues"
-	@echo "  make doctor-report - View latest report"
+	@echo "  make ps            - docker compose ps"
+	@echo "  make logs          - Tail compose logs"
+	@echo "  make demo          - Run a quick showcase flow"
 	@echo ""
 	@echo "♻️  Maintenance:"
 	@echo "  make prune         - Clean unused Docker resources"
-	@echo "  make nuke          - 💥 Destroy all stacks & volumes"
+	@echo "  make nuke          - 💥 Destroy all stacks & volumes (confirmation required)"
 	@echo ""
+
+# ----------------------------------------------------------
+# ✅ Preflight Checks
+# ----------------------------------------------------------
+
+preflight:
+	@echo "🔎 Running preflight checks..."
+	@command -v docker >/dev/null 2>&1 || { echo "❌ docker not installed"; exit 1; }
+	@docker info >/dev/null 2>&1 || { echo "❌ docker daemon not running"; exit 1; }
+	@docker compose version >/dev/null 2>&1 || { echo "❌ docker compose not available"; exit 1; }
+	@echo "✅ preflight checks passed"
+
+demo:
+	@echo "🎬 Running Dev Toolbox demo..."
+	@$(MAKE) preflight
+	@$(MAKE) check
+	@$(MAKE) doctor || true
 
 # ----------------------------------------------------------
 # 🐧 Ephemeral Toolbox Shells (Compose-free)
 # ----------------------------------------------------------
+
 ubuntu:
 	@echo "🐧 Ubuntu toolbox (HOST diagnostics enabled)..."
 	docker build -t $(UBUNTU_IMAGE) -f containers/ubuntu/Dockerfile containers/ubuntu
-	docker run --rm -it --name dev-ubuntu \
-		--privileged \
-		--pid=host \
-		-v /:/host \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v "$$(pwd)":$(WORKDIR) -w $(WORKDIR) \
-		$(UBUNTU_IMAGE)
+	docker run --rm -it --name dev-ubuntu $(COMMON_DOCKER_ARGS) $(UBUNTU_IMAGE)
 
 debian:
 	@echo "🧰 Debian toolbox (HOST diagnostics enabled)..."
 	docker build -t $(DEBIAN_IMAGE) -f containers/debian/Dockerfile containers/debian
-	docker run --rm -it --name dev-debian \
-		--privileged \
-		--pid=host \
-		-v /:/host \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v "$$(pwd)":$(WORKDIR) -w $(WORKDIR) \
-		$(DEBIAN_IMAGE)
+	docker run --rm -it --name dev-debian $(COMMON_DOCKER_ARGS) $(DEBIAN_IMAGE)
 
 # ----------------------------------------------------------
 # 🕵️ Kali Toolbox
 # ----------------------------------------------------------
+
 kali:
 	@echo "🕵️ Kali toolbox (HOST diagnostics enabled)..."
 	docker build -t $(KALI_IMAGE) -f containers/kali/Dockerfile containers/kali
 	-@docker rm -f dev-kali 2>/dev/null || true
-	docker run --rm -it --name dev-kali \
-		--privileged \
-		--pid=host \
-		-v /:/host \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v "$$(pwd)":$(WORKDIR) -w $(WORKDIR) \
-		$(KALI_IMAGE) /bin/bash
+	docker run --rm -it --name dev-kali $(COMMON_DOCKER_ARGS) $(KALI_IMAGE) /bin/bash
 
-# start Kali in the background (persistent toolbox)
 kali-up:
 	@echo "🕵️ Starting Kali (background)..."
 	docker build -t $(KALI_IMAGE) -f containers/kali/Dockerfile containers/kali
-	docker run -d --name dev-kali \
-		--privileged \
-		--pid=host \
-		-v /:/host \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v "$$(pwd)":$(WORKDIR) -w $(WORKDIR) \
-		$(KALI_IMAGE) tail -f /dev/null
+	-@docker rm -f dev-kali 2>/dev/null || true
+	docker run -d --name dev-kali $(COMMON_DOCKER_ARGS) $(KALI_IMAGE) tail -f /dev/null
 
-# attach to a running Kali container
 kali-shell:
 	@echo "🔐 Entering Kali shell..."
 	docker exec -it dev-kali bash || echo "dev-kali not running. Try: make kali or make kali-up"
+
 # ----------------------------------------------------------
 # 🚀 Docker Compose Stacks
 # ----------------------------------------------------------
 
 up-dev:
 	@echo "🚀 Starting Development Stacks..."
-	docker compose --profile dev --profile dotnet --profile terraform up -d
+	docker compose $(DEV_PROFILES) up -d
 
 up-mon:
 	@echo "📊 Starting Monitoring Stack..."
@@ -129,13 +152,21 @@ up-mon:
 
 up-all:
 	@echo "🌐 Starting full SRE Jungle..."
-	docker compose --profile dev --profile monitoring --profile ci --profile dotnet --profile terraform up -d
+	docker compose $(COMPOSE_PROFILES) up -d
 
 down:
-	docker compose --profile dev --profile monitoring --profile ci --profile dotnet --profile terraform stop
+	@echo "🛑 Stopping all stacks..."
+	docker compose $(COMPOSE_PROFILES) stop
 
 rebuild: nuke
+	@echo "🔁 Rebuilding toolbox from clean state..."
 	docker compose --profile dev --profile monitoring up -d --build
+
+ps:
+	@docker compose ps
+
+logs:
+	@docker compose logs --tail=100 -f
 
 # ----------------------------------------------------------
 # 🧪 Toolchain-Specific Shells
@@ -146,9 +177,11 @@ tf-shell:
 	docker exec -it dev-terraform sh
 
 dotnet-shell:
+	@echo "🟣 .NET shell..."
 	docker exec -it dev-dotnet bash
 
 py-shell:
+	@echo "🐍 Python REPL..."
 	docker exec -it dev-python python3
 
 go-shell:
@@ -191,28 +224,29 @@ doctor-docker-cache:
 
 doctor-report:
 	@ls -1t $$HOME/vm-doctor-reports/vm_doctor_*.txt | head -1 | xargs -r less
+
 # ----------------------------------------------------------
 # 🔍 Triage — run bin/net-triage inside dev-kali (auto-starts Kali if needed)
 # Usage:
 #   make triage TARGET=example.com
 #   make triage TARGET=example.com PORT=8443
 # ----------------------------------------------------------
+
 triage:
 	@if [ -z "$(TARGET)" ]; then \
 		echo "Usage: make triage TARGET=example.com [PORT=443]"; \
 		exit 1; \
 	fi
 	@echo "🚑 Running triage for $(TARGET):${PORT:-443}"
-	# start background dev-kali if not running
 	@if ! docker ps --format '{{.Names}}' | grep -q '^dev-kali$$'; then \
 		echo "dev-kali not running — starting background container..."; \
 		docker build -t $(KALI_IMAGE) -f containers/kali/Dockerfile containers/kali; \
-		docker run -d --name dev-kali --privileged --pid=host -v /:/host -v /var/run/docker.sock:/var/run/docker.sock -v "$$(pwd)":$(WORKDIR) -w $(WORKDIR) $(KALI_IMAGE) tail -f /dev/null; \
+		docker run -d --name dev-kali $(COMMON_DOCKER_ARGS) $(KALI_IMAGE) tail -f /dev/null; \
 	else \
 		echo "dev-kali already running"; \
 	fi
-	# run the triage script inside Kali
 	docker exec -it dev-kali bash -lc "/workspace/bin/net-triage $(TARGET) ${PORT:-443}"
+
 # ----------------------------------------------------------
 # ♻️  Maintenance & Cleanup
 # ----------------------------------------------------------
@@ -222,5 +256,11 @@ prune:
 	docker system prune -f
 
 nuke:
-	@echo "☢️  NUKING ALL DATA (containers, volumes, networks)..."
-	docker compose --profile dev --profile monitoring --profile ci --profile dotnet --profile terraform down --volumes --remove-orphans
+	@echo "☢️  This will destroy containers, volumes, and networks."
+	@read -r -p "Type YES to continue: " confirm; \
+	if [ "$$confirm" = "YES" ]; then \
+		echo "💥 Proceeding with destructive cleanup..."; \
+		docker compose $(COMPOSE_PROFILES) down --volumes --remove-orphans; \
+	else \
+		echo "Aborted."; \
+	fi
