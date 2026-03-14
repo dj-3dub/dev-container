@@ -175,7 +175,7 @@ def main() -> int:
     safe_target = target.replace("@", "_").replace(":", "_").replace("/", "_")
 
     # Detect OS family
-    os_release_cmd = "source /etc/os-release 2>/dev/null && echo ${ID:-unknown}"
+    os_release_cmd = ". /etc/os-release 2>/dev/null && echo ${ID:-unknown}"
     os_id_result = run(ssh_wrap(args.host, os_release_cmd) if args.host else os_release_cmd)
     os_id = (os_id_result.get("stdout") or "unknown").strip().lower()
 
@@ -190,7 +190,7 @@ def main() -> int:
         ("df", "df -hT"),
         ("lsblk", "lsblk -f"),
         ("free", "free -h"),
-        ("swap", "swapon --show || true"),
+        ("swap", "/usr/sbin/swapon --show 2>/dev/null || /sbin/swapon --show 2>/dev/null || cat /proc/swaps || true"),
         ("top_mem", "ps aux --sort=-%mem | head -25"),
         ("top_cpu", "ps aux --sort=-%cpu | head -25"),
         ("du_root", "sudo du -xh / --max-depth=1 2>/dev/null | sort -h"),
