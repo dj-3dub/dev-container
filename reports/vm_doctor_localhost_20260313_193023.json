@@ -1,0 +1,157 @@
+{
+  "meta": {
+    "target": "localhost",
+    "timestamp": "20260313_193023",
+    "fix": false,
+    "docker_prune": false,
+    "docker_present": true
+  },
+  "checks": {
+    "date": {
+      "cmd": "date",
+      "rc": 0,
+      "stdout": "Fri Mar 13 07:30:23 PM CDT 2026",
+      "stderr": ""
+    },
+    "uptime": {
+      "cmd": "uptime",
+      "rc": 0,
+      "stdout": "19:30:23 up 9 days, 23:37,  4 users,  load average: 0.02, 0.03, 0.01",
+      "stderr": ""
+    },
+    "df": {
+      "cmd": "df -hT",
+      "rc": 0,
+      "stdout": "Filesystem            Type      Size  Used Avail Use% Mounted on\n/dev/mapper/rhel-root xfs        70G   24G   47G  34% /\ndevtmpfs              devtmpfs  3.8G     0  3.8G   0% /dev\ntmpfs                 tmpfs     3.8G     0  3.8G   0% /dev/shm\nefivarfs              efivarfs  256K   58K  194K  23% /sys/firmware/efi/efivars\ntmpfs                 tmpfs     1.5G  8.7M  1.5G   1% /run\ntmpfs                 tmpfs     1.0M     0  1.0M   0% /run/credentials/systemd-journald.service\n/dev/sda2             xfs       960M  529M  432M  56% /boot\n/dev/sda1             vfat      599M  8.7M  591M   2% /boot/efi\n/dev/mapper/rhel-home xfs        71G  1.7G   69G   3% /home\ntmpfs                 tmpfs     768M  4.0K  768M   1% /run/user/1000",
+      "stderr": ""
+    },
+    "lsblk": {
+      "cmd": "lsblk -f",
+      "rc": 0,
+      "stdout": "NAME          FSTYPE      FSVER            LABEL                   UUID                                   FSAVAIL FSUSE% MOUNTPOINTS\nsda                                                                                                                      \n\u251c\u2500sda1        vfat        FAT32                                    1C71-6AF3                               590.1M     1% /boot/efi\n\u251c\u2500sda2        xfs                                                  c9424e2e-8a27-4692-93bc-08b464d12dc8    431.5M    55% /boot\n\u2514\u2500sda3        LVM2_member LVM2 001                                 RC40RL-0hzc-MXzG-C0p6-ZwJL-c5tm-9iH7FV                \n  \u251c\u2500rhel-root xfs                                                  f45e34df-fb4d-451a-ac5d-f23b716bf7ea     46.3G    34% /\n  \u251c\u2500rhel-swap swap        1                                        ff64e957-a04f-4ce3-94f2-a6960e286419                  [SWAP]\n  \u2514\u2500rhel-home xfs                                                  f527a0a6-7a3b-49dc-bcd8-afad69b67124     68.8G     2% /home\nsr0           iso9660     Joliet Extension RHEL-10-1-BaseOS-x86_64 2025-10-21-06-14-30-00",
+      "stderr": ""
+    },
+    "free": {
+      "cmd": "free -h",
+      "rc": 0,
+      "stdout": "total        used        free      shared  buff/cache   available\nMem:           7.5Gi       1.1Gi       5.0Gi       8.7Mi       1.7Gi       6.4Gi\nSwap:          7.9Gi          0B       7.9Gi",
+      "stderr": ""
+    },
+    "swap": {
+      "cmd": "swapon --show || true",
+      "rc": 0,
+      "stdout": "NAME      TYPE      SIZE USED PRIO\n/dev/dm-1 partition 7.9G   0B   -2",
+      "stderr": ""
+    },
+    "top_mem": {
+      "cmd": "ps aux --sort=-%mem | head -25",
+      "rc": 0,
+      "stdout": "USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nroot       11747  0.0  1.2 2060952 96944 ?       Ssl  Mar05   2:37 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock\nroot       56141  0.0  0.8 1953180 65648 ?       Ssl  09:59   0:25 /usr/bin/containerd\nroot        1163  0.0  0.5 133056 45416 ?        Ssl  Mar03   0:01 /usr/bin/python3 -sP /usr/sbin/firewalld --nofork --nopid\nroot           1  0.0  0.5  50020 41700 ?        Ss   Mar03   0:56 /usr/lib/systemd/systemd --switched-root --system --deserialize=43 rhgb\nroot        1239  0.0  0.2 330284 17696 ?        Ssl  Mar03   1:14 /usr/sbin/NetworkManager --no-daemon\nroot         959  0.0  0.1  25488 15220 ?        Ss   Mar03   0:09 /usr/lib/systemd/systemd-journald\ntim        57222  0.0  0.1  22252 13588 ?        Ss   18:36   0:00 /usr/lib/systemd/systemd --user\ntim        58137 48.0  0.1  17140 13200 pts/2    S+   19:30   0:00 python3 ./bin/../scripts/vm_doctor.py\nroot        1009  0.0  0.1  35972 12276 ?        Ss   Mar03   0:03 /usr/lib/systemd/systemd-udevd\nroot        1317  0.0  0.1 163540 11636 ?        Ssl  Mar03   0:57 /usr/sbin/rsyslogd -n\nroot       57937  0.0  0.1  15292 10300 ?        Ss   19:10   0:00 sshd-session: tim [priv]\nroot       57217  0.0  0.1  15264 10276 ?        Ss   18:36   0:00 sshd-session: tim [priv]\nroot       58042  0.0  0.1  15292 10276 ?        Ss   19:26   0:00 sshd-session: tim [priv]\nroot        1166  0.0  0.1  18924 10044 ?        Ss   Mar03   0:05 /usr/lib/systemd/systemd-logind\npolkitd     1240  0.0  0.1 307480  9360 ?        Ssl  Mar03   0:01 /usr/lib/polkit-1/polkitd --no-debug --log-level=err\nroot        1169  0.1  0.1 315860  8952 ?        Ssl  Mar03  21:09 /usr/bin/vmtoolsd\nroot        1168  0.0  0.1  17980  8920 ?        Ss   Mar03   0:00 /usr/bin/VGAuthService -s\ntim        57239  0.1  0.1  15524  7920 ?        S    18:36   0:03 sshd-session: tim@pts/0\ntim        58045  0.3  0.1  15520  7900 ?        S    19:26   0:00 sshd-session: tim@pts/2\ntim        57940  0.0  0.1  15520  7896 ?        S    19:10   0:00 sshd-session: tim@pts/1\nroot       58040  0.0  0.0  16616  7312 ?        S    19:25   0:00 systemd-userwork: waiting...\nroot       58041  0.0  0.0  16488  7168 ?        S    19:26   0:00 systemd-userwork: waiting...\nroot        1263  0.0  0.0   8756  6368 ?        Ss   Mar03   0:00 sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups\nroot        1000  0.0  0.0  15864  6112 ?        Ss   Mar03   0:12 /usr/lib/systemd/systemd-userdbd",
+      "stderr": ""
+    },
+    "top_cpu": {
+      "cmd": "ps aux --sort=-%cpu | head -25",
+      "rc": 0,
+      "stdout": "USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\ntim        58151  500  0.0   9296  3972 pts/2    R+   19:30   0:00 ps aux --sort=-%cpu\ntim        58137 35.2  0.1  17140 13200 pts/2    S+   19:30   0:00 python3 ./bin/../scripts/vm_doctor.py\ntim        58135  2.7  0.0   6948  3308 pts/2    S+   19:30   0:00 bash ./bin/vm-doctor\nroot       58038  1.2  0.0      0     0 ?        I    19:24   0:04 [kworker/0:2-events]\nroot       58034  0.6  0.0      0     0 ?        I    19:21   0:03 [kworker/1:2-events]\nroot       57911  0.4  0.0      0     0 ?        I    19:07   0:05 [kworker/3:0-events_freezable_pwr_efficient]\nroot       58023  0.4  0.0      0     0 ?        I    19:15   0:03 [kworker/1:0-events_freezable]\ntim        58045  0.3  0.1  15520  7900 ?        S    19:26   0:00 sshd-session: tim@pts/2\nroot       57756  0.3  0.0      0     0 ?        I    19:04   0:04 [kworker/2:1-events]\nroot       58133  0.2  0.0      0     0 ?        I    19:30   0:00 [kworker/2:3-events_freezable]\nroot       58031  0.2  0.0      0     0 ?        I    19:20   0:01 [kworker/3:3-events_freezable_pwr_efficient]\nroot       58025  0.1  0.0      0     0 ?        I    19:17   0:01 [kworker/0:0-events]\nroot        1169  0.1  0.1 315860  8952 ?        Ssl  Mar03  21:09 /usr/bin/vmtoolsd\nroot       58027  0.1  0.0      0     0 ?        I    19:19   0:00 [kworker/2:0-events_freezable_pwr_efficient]\nroot       58116  0.1  0.0      0     0 ?        I    19:26   0:00 [kworker/2:2-cgroup_destroy]\ntim        57239  0.1  0.1  15524  7920 ?        S    18:36   0:03 sshd-session: tim@pts/0\nroot       56141  0.0  0.8 1953180 65648 ?       Ssl  09:59   0:25 /usr/bin/containerd\nroot       58127  0.0  0.0      0     0 ?        I    19:28   0:00 [kworker/3:1-events]\ntim        58046  0.0  0.0   8688  5580 pts/2    Ss   19:26   0:00 -bash\ntim        57940  0.0  0.1  15520  7896 ?        S    19:10   0:00 sshd-session: tim@pts/1\nroot       58042  0.0  0.1  15292 10276 ?        Ss   19:26   0:00 sshd-session: tim [priv]\nroot       11747  0.0  1.2 2060952 96944 ?       Ssl  Mar05   2:37 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock\nroot       58129  0.0  0.0  16308  6048 ?        S    19:29   0:00 systemd-userwork: waiting...\ntim        57240  0.0  0.0   8820  5740 pts/0    Ss+  18:36   0:00 -bash",
+      "stderr": ""
+    },
+    "du_root": {
+      "cmd": "sudo du -xh / --max-depth=1 2>/dev/null | sort -h",
+      "rc": 0,
+      "stdout": "0\t/afs\n0\t/media\n0\t/mnt\n0\t/srv\n4.0K\t/tmp\n76K\t/root\n26M\t/etc\n174M\t/opt\n3.5G\t/usr\n19G\t/var\n23G\t/",
+      "stderr": ""
+    },
+    "du_var": {
+      "cmd": "sudo du -xh /var --max-depth=2 2>/dev/null | sort -h | tail -80",
+      "rc": 0,
+      "stdout": "0\t/var/lib/games\n0\t/var/lib/initramfs\n0\t/var/lib/iscsi\n0\t/var/lib/kdump\n0\t/var/lib/kpatch\n0\t/var/lib/misc\n0\t/var/lib/os-prober\n0\t/var/lib/pcp\n0\t/var/lib/polkit-1\n0\t/var/lib/private\n0\t/var/lib/rpm-state\n0\t/var/lib/samba\n0\t/var/lib/smartmontools\n0\t/var/lib/sss\n0\t/var/lib/tpm2-tss\n0\t/var/lib/tuned\n0\t/var/lib/udisks2\n0\t/var/lib/vmware\n0\t/var/lib/xfsdump\n0\t/var/lib/yggdrasil\n0\t/var/local\n0\t/var/log/chrony\n0\t/var/log/private\n0\t/var/log/samba\n0\t/var/log/sssd\n0\t/var/nis\n0\t/var/opt\n0\t/var/preserve\n0\t/var/spool/at\n0\t/var/spool/cron\n0\t/var/spool/lpd\n0\t/var/spool/mail\n0\t/var/spool/plymouth\n0\t/var/spool/rhsm\n0\t/var/tmp/systemd-private-83d145c9169044f78259170acc56e1ef-chronyd.service-dpZZIV\n0\t/var/tmp/systemd-private-83d145c9169044f78259170acc56e1ef-dbus-broker.service-KZKVzz\n0\t/var/tmp/systemd-private-83d145c9169044f78259170acc56e1ef-irqbalance.service-gOL45f\n0\t/var/tmp/systemd-private-83d145c9169044f78259170acc56e1ef-polkit.service-aAz9Mo\n0\t/var/tmp/systemd-private-83d145c9169044f78259170acc56e1ef-systemd-logind.service-JVecZZ\n0\t/var/yp\n4.0K\t/var/cache/insights-client\n4.0K\t/var/lib/chrony\n4.0K\t/var/lib/logrotate\n4.0K\t/var/lib/plymouth\n4.0K\t/var/lib/rsyslog\n4.0K\t/var/lib/setroubleshoot\n4.0K\t/var/tmp\n12K\t/var/log/zabbix\n12K\t/var/spool\n12K\t/var/spool/anacron\n16K\t/var/lib/NetworkManager\n28K\t/var/log/tuned\n32K\t/var/lib/PackageKit\n32K\t/var/log/rhsm\n36K\t/var/cache/ldconfig\n40K\t/var/lib/alternatives\n60K\t/var/lib/fwupd\n128K\t/var/lib/containers\n216K\t/var/cache/fwupd\n248K\t/var/lib/rhsm\n252K\t/var/lib/systemd\n1.3M\t/var/log/atop\n1.6M\t/var/cache/man\n2.2M\t/var/cache/swcatalog\n2.6M\t/var/lib/insights\n3.0M\t/var/log/insights-client\n4.4M\t/var/lib/dnf\n5.9M\t/var/log/anaconda\n8.6M\t/var/lib/plocate\n16M\t/var/lib/selinux\n20M\t/var/log/sa\n39M\t/var/log/audit\n56M\t/var/lib/docker\n78M\t/var/log\n84M\t/var/cache/PackageKit\n99M\t/var/cache/dnf\n187M\t/var/cache\n19G\t/var\n19G\t/var/lib\n19G\t/var/lib/containerd",
+      "stderr": ""
+    },
+    "big_files": {
+      "cmd": "sudo find / -xdev -type f -size +500M -printf '%10s  %p\\n' 2>/dev/null | sort -n | tail -60",
+      "rc": 0,
+      "stdout": "753838128  /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/1946/fs/usr/bin/clickhouse",
+      "stderr": ""
+    },
+    "journal_usage": {
+      "cmd": "sudo journalctl --disk-usage || true",
+      "rc": 0,
+      "stdout": "Archived and active journals take up 8M in the file system.",
+      "stderr": ""
+    },
+    "log_sizes": {
+      "cmd": "sudo du -sh /var/log/* 2>/dev/null | sort -h | tail -40",
+      "rc": 0,
+      "stdout": "8.0K\t/var/log/secure-20260222\n8.0K\t/var/log/secure-20260308\n12K\t/var/log/secure-20260215\n12K\t/var/log/zabbix\n20K\t/var/log/vmware-vmtoolsd-root.log\n28K\t/var/log/boot.log-20260126\n28K\t/var/log/boot.log-20260129\n28K\t/var/log/boot.log-20260208\n28K\t/var/log/boot.log-20260212\n28K\t/var/log/boot.log-20260225\n28K\t/var/log/tuned\n32K\t/var/log/rhsm\n48K\t/var/log/cron\n48K\t/var/log/vmware-vgauthsvc.log.0\n52K\t/var/log/boot.log-20260215\n52K\t/var/log/boot.log-20260304\n56K\t/var/log/cron-20260215\n60K\t/var/log/cron-20260222\n60K\t/var/log/cron-20260301\n60K\t/var/log/cron-20260308\n92K\t/var/log/vmware-vmsvc-root.log\n120K\t/var/log/wtmp\n152K\t/var/log/dnf.librepo.log\n192K\t/var/log/dnf.rpm.log\n244K\t/var/log/firewalld\n392K\t/var/log/messages\n564K\t/var/log/messages-20260222\n624K\t/var/log/messages-20260301\n812K\t/var/log/messages-20260308\n876K\t/var/log/dnf.log\n1004K\t/var/log/messages-20260215\n1.1M\t/var/log/dnf.librepo.log.1\n1.1M\t/var/log/dnf.log.1\n1.1M\t/var/log/dnf.log.2\n1.1M\t/var/log/dnf.log.3\n1.3M\t/var/log/atop\n3.0M\t/var/log/insights-client\n5.9M\t/var/log/anaconda\n20M\t/var/log/sa\n39M\t/var/log/audit",
+      "stderr": ""
+    },
+    "pkg_cache": {
+      "cmd": "sudo du -sh /var/cache/apt/archives 2>/dev/null || sudo du -sh /var/cache/dnf 2>/dev/null || true",
+      "rc": 0,
+      "stdout": "99M\t/var/cache/dnf",
+      "stderr": ""
+    },
+    "pkg_autoremove_dry": {
+      "cmd": "sudo apt-get -s autoremove --purge 2>/dev/null | sed -n '1,160p' || sudo dnf repoquery --unneeded 2>/dev/null | tail -80 || true",
+      "rc": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "largest_pkgs": {
+      "cmd": "dpkg-query -Wf '${Installed-Size}\\t${Package}\\n' 2>/dev/null | sort -n | tail -60 || rpm -qa --queryformat '%{SIZE}\\t%{NAME}\\n' 2>/dev/null | sort -n | tail -60 || true",
+      "rc": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "recent_pkgs": {
+      "cmd": "grep -E 'install |upgrade ' /var/log/dpkg.log 2>/dev/null | tail -120 || sudo dnf history list 2>/dev/null | head -40 || true",
+      "rc": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "running_services": {
+      "cmd": "systemctl --type=service --state=running | sed -n '1,220p' || true",
+      "rc": 0,
+      "stdout": "UNIT                     LOAD   ACTIVE SUB     DESCRIPTION\n  chronyd.service          loaded active running NTP client/server\n  containerd.service       loaded active running containerd container runtime\n  crond.service            loaded active running Command Scheduler\n  dbus-broker.service      loaded active running D-Bus System Message Bus\n  docker.service           loaded active running Docker Application Container Engine\n  firewalld.service        loaded active running firewalld - dynamic firewall daemon\n  irqbalance.service       loaded active running irqbalance daemon\n  NetworkManager.service   loaded active running Network Manager\n  polkit.service           loaded active running Authorization Manager\n  rsyslog.service          loaded active running System Logging Service\n  sshd.service             loaded active running OpenSSH server daemon\n  systemd-journald.service loaded active running Journal Service\n  systemd-logind.service   loaded active running User Login Management\n  systemd-udevd.service    loaded active running Rule-based Manager for Device Events and Files\n  systemd-userdbd.service  loaded active running User Database Manager\n  user@1000.service        loaded active running User Manager for UID 1000\n  vgauthd.service          loaded active running VGAuth Service for open-vm-tools\n  vmtoolsd.service         loaded active running Service for virtual machines hosted on VMware\n\nLegend: LOAD   \u2192 Reflects whether the unit definition was properly loaded.\n        ACTIVE \u2192 The high-level unit activation state, i.e. generalization of SUB.\n        SUB    \u2192 The low-level unit activation state, values depend on unit type.\n\n18 loaded units listed.",
+      "stderr": ""
+    }
+  },
+  "docker": {
+    "docker_ps": {
+      "cmd": "docker ps -a --format 'table {{.Names}}\\t{{.Status}}\\t{{.Image}}'",
+      "rc": 0,
+      "stdout": "NAMES                  STATUS                     IMAGE\nobservability-zeek     Exited (0) 3 weeks ago     blacktop/zeek:latest\nobservability-ntopng   Exited (137) 3 weeks ago   ntop/ntopng:latest\ndev-kali               Exited (143) 3 weeks ago   toolbox-kali",
+      "stderr": ""
+    },
+    "docker_df": {
+      "cmd": "docker system df -v",
+      "rc": 0,
+      "stdout": "Images space usage:\n\nREPOSITORY           TAG       IMAGE ID       CREATED       SIZE      SHARED SIZE   UNIQUE SIZE   CONTAINERS\ndev-container-kali   latest    90754268bdeb   3 weeks ago   1.01GB    765.4MB       248.7MB       0\ntoolbox-kali         latest    642184a1a4ac   3 weeks ago   1.01GB    765.4MB       248.7MB       1\nntop/ntopng          latest    d1f9fa615d8d   3 weeks ago   2.66GB    85.07MB       2.571GB       1\ntoolbox-ubuntu       latest    5366f4d3cbc9   3 weeks ago   1.3GB     85.07MB       1.216GB       0\nblacktop/zeek        latest    5e90a86baaab   3 years ago   98.9MB    0B            98.92MB       1\n\nContainers space usage:\n\nCONTAINER ID   IMAGE                  COMMAND                  LOCAL VOLUMES   SIZE      CREATED       STATUS                     NAMES\n25219802f48f   blacktop/zeek:latest   \"zeek -C -i any loca\u2026\"   1               69.6kB    3 weeks ago   Exited (0) 3 weeks ago     observability-zeek\nd1a0d4e67ae2   ntop/ntopng:latest     \"/run.sh\"                1               28.7kB    3 weeks ago   Exited (137) 3 weeks ago   observability-ntopng\n3277bf12c8ae   toolbox-kali           \"tail -f /dev/null\"      0               0B        3 weeks ago   Exited (143) 3 weeks ago   dev-kali\n\nLocal Volumes space usage:\n\nVOLUME NAME                 LINKS     SIZE\ndev-container_ntopng-data   1         55.9MB\ndev-container_zeek-logs     1         0B\n\nBuild cache usage: 15.2GB\n\nCACHE ID       CACHE TYPE     SIZE      CREATED       LAST USED     USAGE     SHARED\nxfuk4a6e75kz   regular        20.8MB    3 weeks ago   3 weeks ago   1         true\np9bnj7ijmxyg   regular        3.13MB    3 weeks ago   3 weeks ago   1         true\nl7f0bfvsfqa1   regular        99B       3 weeks ago   3 weeks ago   1         true\nqq1j9l7wgcek   regular        1.16GB    3 weeks ago   3 weeks ago   1         true\nnoj1tlbidxf3   source.local   4.1kB     3 weeks ago   3 weeks ago   1         false\ns4ob4wvnjq6c   regular        4.52kB    3 weeks ago   3 weeks ago   1         true\nwtl72cfns5us   source.local   0B        3 weeks ago   3 weeks ago   1         false\ndstjce09ltgp   regular        3.88MB    3 weeks ago   3 weeks ago   1         true\nxrrxiu2y0jip   regular        115MB     3 weeks ago   3 weeks ago   1         true\nnf10de7ur62g   regular        12.3GB    3 weeks ago   3 weeks ago   1         false\nr9ewfy48euce   regular        99B       3 weeks ago   3 weeks ago   1         false\n3o0hpfrzxoyl   regular        185MB     3 weeks ago   3 weeks ago   2         true\n5d17fsuco0vb   regular        633MB     3 weeks ago   3 weeks ago   1         false\nkv5i0o8d1582   regular        32B       3 weeks ago   3 weeks ago   2         true\nusx912d96ji9   regular        829MB     3 weeks ago   3 weeks ago   1         true\nlkvtprgw83p5   regular        32B       3 weeks ago   3 weeks ago   1         true\nrcwu69tdil1f   regular        32B       3 weeks ago   3 weeks ago   1         true\n013w6ts9vo21   source.local   4.1kB     3 weeks ago   3 weeks ago   9         false\nr1n1fzpqf4ps   regular        99B       3 weeks ago   3 weeks ago   7         true\nmuuafptmhyv8   source.local   0B        3 weeks ago   3 weeks ago   9         false",
+      "stderr": ""
+    },
+    "docker_exited": {
+      "cmd": "docker ps -a --filter status=exited --format 'table {{.Names}}\\t{{.Status}}\\t{{.Image}}'",
+      "rc": 0,
+      "stdout": "NAMES                  STATUS                     IMAGE\nobservability-zeek     Exited (0) 3 weeks ago     blacktop/zeek:latest\nobservability-ntopng   Exited (137) 3 weeks ago   ntop/ntopng:latest\ndev-kali               Exited (143) 3 weeks ago   toolbox-kali",
+      "stderr": ""
+    },
+    "docker_dangling_images": {
+      "cmd": "docker images -f dangling=true --format 'table {{.Repository}}\\t{{.Tag}}\\t{{.ID}}\\t{{.Size}}'",
+      "rc": 0,
+      "stdout": "REPOSITORY   TAG       IMAGE ID   SIZE",
+      "stderr": ""
+    },
+    "docker_dangling_vols": {
+      "cmd": "docker volume ls -f dangling=true",
+      "rc": 0,
+      "stdout": "DRIVER    VOLUME NAME",
+      "stderr": ""
+    },
+    "docker_prune_candidate": {
+      "cmd": "docker system df -v",
+      "rc": 0,
+      "stdout": "Images space usage:\n\nREPOSITORY           TAG       IMAGE ID       CREATED       SIZE      SHARED SIZE   UNIQUE SIZE   CONTAINERS\ndev-container-kali   latest    90754268bdeb   3 weeks ago   1.01GB    765.4MB       248.7MB       0\ntoolbox-kali         latest    642184a1a4ac   3 weeks ago   1.01GB    765.4MB       248.7MB       1\nntop/ntopng          latest    d1f9fa615d8d   3 weeks ago   2.66GB    85.07MB       2.571GB       1\ntoolbox-ubuntu       latest    5366f4d3cbc9   3 weeks ago   1.3GB     85.07MB       1.216GB       0\nblacktop/zeek        latest    5e90a86baaab   3 years ago   98.9MB    0B            98.92MB       1\n\nContainers space usage:\n\nCONTAINER ID   IMAGE                  COMMAND                  LOCAL VOLUMES   SIZE      CREATED       STATUS                     NAMES\n25219802f48f   blacktop/zeek:latest   \"zeek -C -i any loca\u2026\"   1               69.6kB    3 weeks ago   Exited (0) 3 weeks ago     observability-zeek\nd1a0d4e67ae2   ntop/ntopng:latest     \"/run.sh\"                1               28.7kB    3 weeks ago   Exited (137) 3 weeks ago   observability-ntopng\n3277bf12c8ae   toolbox-kali           \"tail -f /dev/null\"      0               0B        3 weeks ago   Exited (143) 3 weeks ago   dev-kali\n\nLocal Volumes space usage:\n\nVOLUME NAME                 LINKS     SIZE\ndev-container_ntopng-data   1         55.9MB\ndev-container_zeek-logs     1         0B\n\nBuild cache usage: 15.2GB\n\nCACHE ID       CACHE TYPE     SIZE      CREATED       LAST USED     USAGE     SHARED\nxfuk4a6e75kz   regular        20.8MB    3 weeks ago   3 weeks ago   1         true\np9bnj7ijmxyg   regular        3.13MB    3 weeks ago   3 weeks ago   1         true\nl7f0bfvsfqa1   regular        99B       3 weeks ago   3 weeks ago   1         true\nqq1j9l7wgcek   regular        1.16GB    3 weeks ago   3 weeks ago   1         true\nnoj1tlbidxf3   source.local   4.1kB     3 weeks ago   3 weeks ago   1         false\ns4ob4wvnjq6c   regular        4.52kB    3 weeks ago   3 weeks ago   1         true\nwtl72cfns5us   source.local   0B        3 weeks ago   3 weeks ago   1         false\ndstjce09ltgp   regular        3.88MB    3 weeks ago   3 weeks ago   1         true\nxrrxiu2y0jip   regular        115MB     3 weeks ago   3 weeks ago   1         true\nnf10de7ur62g   regular        12.3GB    3 weeks ago   3 weeks ago   1         false\nr9ewfy48euce   regular        99B       3 weeks ago   3 weeks ago   1         false\n3o0hpfrzxoyl   regular        185MB     3 weeks ago   3 weeks ago   2         true\n5d17fsuco0vb   regular        633MB     3 weeks ago   3 weeks ago   1         false\nkv5i0o8d1582   regular        32B       3 weeks ago   3 weeks ago   2         true\nusx912d96ji9   regular        829MB     3 weeks ago   3 weeks ago   1         true\nlkvtprgw83p5   regular        32B       3 weeks ago   3 weeks ago   1         true\nrcwu69tdil1f   regular        32B       3 weeks ago   3 weeks ago   1         true\n013w6ts9vo21   source.local   4.1kB     3 weeks ago   3 weeks ago   9         false\nr1n1fzpqf4ps   regular        99B       3 weeks ago   3 weeks ago   7         true\nmuuafptmhyv8   source.local   0B        3 weeks ago   3 weeks ago   9         false",
+      "stderr": ""
+    }
+  }
+}

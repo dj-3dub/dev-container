@@ -111,11 +111,13 @@ demo:
 ubuntu:
 	@echo "🐧 Ubuntu toolbox (HOST diagnostics enabled)..."
 	docker build -t $(UBUNTU_IMAGE) -f containers/ubuntu/Dockerfile containers/ubuntu
+	-@docker rm -f dev-ubuntu 2>/dev/null || true
 	docker run --rm -it --name dev-ubuntu $(COMMON_DOCKER_ARGS) $(UBUNTU_IMAGE)
 
 debian:
 	@echo "🧰 Debian toolbox (HOST diagnostics enabled)..."
 	docker build -t $(DEBIAN_IMAGE) -f containers/debian/Dockerfile containers/debian
+	-@docker rm -f dev-debian 2>/dev/null || true
 	docker run --rm -it --name dev-debian $(COMMON_DOCKER_ARGS) $(DEBIAN_IMAGE)
 
 # ----------------------------------------------------------
@@ -156,11 +158,11 @@ up-all:
 
 down:
 	@echo "🛑 Stopping all stacks..."
-	docker compose $(COMPOSE_PROFILES) stop
+	docker compose $(COMPOSE_PROFILES) down --remove-orphans
 
 rebuild: nuke
 	@echo "🔁 Rebuilding toolbox from clean state..."
-	docker compose --profile dev --profile monitoring up -d --build
+	docker compose $(COMPOSE_PROFILES) up -d --build
 
 ps:
 	@docker compose ps
@@ -173,7 +175,10 @@ logs:
 # ----------------------------------------------------------
 
 tf-shell:
-	@echo "🏗️  Terraform workspace..."
+	@if ! docker ps --format '{{.Names}}' | grep -q '^dev-terraform$$'; then \
+		echo "dev-terraform not running. Try: make up-dev"; \
+		exit 1; \
+	fi
 	docker exec -it dev-terraform sh
 
 dotnet-shell:
@@ -197,17 +202,17 @@ rust-shell:
 # ----------------------------------------------------------
 
 check:
-	@echo "🏥 Checking Jungle Health..."
-	@echo "--------------------------------"
-	@for c in arcane dev-debian dev-ubuntu dev-kali dev-python dev-go dev-dotnet dev-rust dev-terraform dev-aws dev-powershell dev-ansible dev-wireshark monitoring-prometheus monitoring-grafana monitoring-node-exporter monitoring-cadvisor; do \
-		if docker ps --format '{{.Names}}' | grep -q "$$c"; then \
+	@echo "🏥 Checking Compose service health..."
+	@docker compose $(COMPOSE_PROFILES) ps
+	@echo ""
+	@echo "📦 Ephemeral containers:"
+	@for c in dev-ubuntu dev-debian dev-kali; do \
+		if docker ps --format '{{.Names}}' | grep -q "^$$c$$"; then \
 			echo "✅ $$c: RUNNING"; \
 		else \
-			echo "❌ $$c: NOT RUNNING"; \
+			echo "⚪ $$c: NOT RUNNING"; \
 		fi \
 	done
-	@echo "--------------------------------"
-	@docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.CPUPerc}}"
 
 # ----------------------------------------------------------
 # 🧑‍⚕️ vm-doctor (Diagnostics Toolkit)
@@ -217,13 +222,23 @@ doctor:
 	@./bin/vm-doctor
 
 doctor-fix:
-	@./bin/vm-doctor -fix
+	@./bin/vm-doctor --fix
 
 doctor-docker-cache:
-	@./bin/vm-doctor -docker-cache-prune
+	@./bin/vm-doctor --docker-prune
 
 doctor-report:
-	@ls -1t $$HOME/vm-doctor-reports/vm_doctor_*.txt | head -1 | xargs -r less
+	@if [ ! -d "./reports" ]; then \
+		echo "❌ reports directory does not exist."; \
+		echo "Run: make doctor"; \
+		exit 0; \
+	fi
+	@if ! ls ./reports/vm_doctor_* >/dev/null 2>&1; then \
+		echo "❌ No vm-doctor reports found."; \
+		echo "Run: make doctor"; \
+		exit 0; \
+	fi
+	@ls -1t ./reports/vm_doctor_* | head -1 | xargs -r less
 
 # ----------------------------------------------------------
 # 🔍 Triage — run bin/net-triage inside dev-kali (auto-starts Kali if needed)
