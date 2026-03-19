@@ -1,4 +1,4 @@
-# 🛠️ Dev Toolbox 2026 — Containerized Platform for Diagnostics, Automation & Recovery
+# 🛠️ Dev Toolbox 2026 : Containerized Platform for Diagnostics, Automation & Recovery
 
 ## 🚀 Overview
 
