@@ -73,7 +73,7 @@ make up-all
 | Debian   | Primary infrastructure & network triage |
 | Ubuntu   | Platform engineering / SRE workspace |
 | Kali     | Security, authentication, and protocol diagnostics |
-| Netshoot | Baseline network debugging |
+| Rocky    | RHEL-based diagnostics, RPM/DNF workflows, and enterprise Linux tooling |
 
 ---
 
@@ -83,7 +83,7 @@ make up-all
 make debian-shell
 make ubuntu-shell
 make kali-shell
-make netshoot-shell
+make rocky-shell
 ```
 
 ---
@@ -164,10 +164,10 @@ Dev Toolbox is designed around **role-based troubleshooting flows**:
 
 | Container | Role |
 |----------|------|
-| Netshoot | First responder |
 | Debian   | Infrastructure engineer |
 | Kali     | Security escalation |
 | Ubuntu   | Platform engineer |
+| Rocky    | RHEL diagnostics |
 
 ---
 
