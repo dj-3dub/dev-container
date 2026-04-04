@@ -56,6 +56,26 @@ services:
     entrypoint: ["tail", "-f", "/dev/null"]
     profiles: ["dev"]
 
+  rocky:
+    build:
+      context: .
+      dockerfile: ./containers/rocky/Dockerfile
+    container_name: dev-rocky
+    network_mode: "host"
+    pid: "host"
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_PTRACE
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /:/host:ro
+    entrypoint: ["tail", "-f", "/dev/null"]
+    profiles: ["dev"]
+
 # ---------- Kali Toolbox ----------
   kali:
     build:

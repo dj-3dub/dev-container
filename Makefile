@@ -8,8 +8,8 @@ SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
 .PHONY: help \
-        ubuntu debian kali kali-up \
-        ubuntu-shell debian-shell kali-shell \
+        ubuntu debian rocky kali kali-up rocky-up \
+        ubuntu-shell debian-shell kali-shell rocky-shell \
         up-dev up-mon up-all down rebuild nuke \
         check ps logs preflight demo \
         tf-shell dotnet-shell py-shell go-shell rust-shell \
@@ -22,6 +22,7 @@ SHELL := /bin/bash
 
 UBUNTU_IMAGE := toolbox-ubuntu
 DEBIAN_IMAGE := toolbox-debian
+ROCKY_IMAGE := toolbox-rocky
 KALI_IMAGE := toolbox-kali
 KALI_CONTEXT := containers/kali
 
@@ -55,11 +56,14 @@ help:
 	@echo "🐧 Ephemeral Shells (local images):"
 	@echo "  make ubuntu        - Ubuntu toolbox (zsh)"
 	@echo "  make debian        - Debian toolbox (zsh)"
+	@echo "  make rocky         - Rocky Linux 10 toolbox (zsh)"
 	@echo "  make kali          - Kali (network-focused) interactive shell"
 	@echo ""
-	@echo "🕵️ Kali Background / Triage:"
+	@echo "🕵️ Background / Triage Shells:"
 	@echo "  make kali-up       - Start Kali in the background"
 	@echo "  make kali-shell    - Attach to running Kali container"
+	@echo "  make rocky-up      - Start Rocky in the background"
+	@echo "  make rocky-shell   - Attach to running Rocky container"
 	@echo "  make triage TARGET=example.com [PORT=443]"
 	@echo ""
 	@echo "🚀 Long-Running Stacks (docker compose):"
@@ -120,8 +124,14 @@ debian:
 	-@docker rm -f dev-debian 2>/dev/null || true
 	docker run --rm -it --name dev-debian $(COMMON_DOCKER_ARGS) $(DEBIAN_IMAGE)
 
+rocky:
+	@echo "🪨 Rocky Linux 10 toolbox (HOST diagnostics enabled)..."
+	docker build -t $(ROCKY_IMAGE) -f containers/rocky/Dockerfile containers/rocky
+	-@docker rm -f dev-rocky 2>/dev/null || true
+	docker run --rm -it --name dev-rocky $(COMMON_DOCKER_ARGS) $(ROCKY_IMAGE)
+
 # ----------------------------------------------------------
-# 🕵️ Kali Toolbox
+# 🕵️ Kali / Rocky Toolbox
 # ----------------------------------------------------------
 
 kali:
@@ -139,6 +149,16 @@ kali-up:
 kali-shell:
 	@echo "🔐 Entering Kali shell..."
 	docker exec -it dev-kali bash || echo "dev-kali not running. Try: make kali or make kali-up"
+
+rocky-up:
+	@echo "🪨 Starting Rocky Linux 10 (background)..."
+	docker build -t $(ROCKY_IMAGE) -f containers/rocky/Dockerfile containers/rocky
+	-@docker rm -f dev-rocky 2>/dev/null || true
+	docker run -d --name dev-rocky $(COMMON_DOCKER_ARGS) $(ROCKY_IMAGE) tail -f /dev/null
+
+rocky-shell:
+	@echo "🔐 Entering Rocky shell..."
+	docker exec -it dev-rocky zsh || echo "dev-rocky not running. Try: make rocky or make rocky-up"
 
 # ----------------------------------------------------------
 # 🚀 Docker Compose Stacks
@@ -206,7 +226,7 @@ check:
 	@docker compose $(COMPOSE_PROFILES) ps
 	@echo ""
 	@echo "📦 Ephemeral containers:"
-	@for c in dev-ubuntu dev-debian dev-kali; do \
+	@for c in dev-ubuntu dev-debian dev-rocky dev-kali; do \
 		if docker ps --format '{{.Names}}' | grep -q "^$$c$$"; then \
 			echo "✅ $$c: RUNNING"; \
 		else \
