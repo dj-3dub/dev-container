@@ -76,7 +76,7 @@ services:
     entrypoint: ["tail", "-f", "/dev/null"]
     profiles: ["dev"]
 
-# ---------- Kali Toolbox ----------
+  # ---------- Kali Toolbox ----------
   kali:
     build:
       context: ./containers/kali
@@ -95,6 +95,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /:/host:ro
     entrypoint: ["tail", "-f", "/dev/null"]
+    profiles: ["dev"]
 
   python:
     image: python:3.14-slim
@@ -248,9 +249,41 @@ services:
       - toolbox-net
     profiles: ["monitoring"]
 
+  loki:
+    image: grafana/loki:latest
+    container_name: monitoring-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki:/etc/loki:ro
+      - loki-data:/loki
+    command:
+      - "-config.file=/etc/loki/loki.yml"
+    networks:
+      - toolbox-net
+    profiles: ["monitoring"]
+
+  alloy:
+    image: grafana/alloy:latest
+    container_name: monitoring-alloy
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - run
+      - /etc/alloy/config.alloy
+    networks:
+      - toolbox-net
+    profiles: ["monitoring"]
+
   node-exporter:
     image: prom/node-exporter:latest
     container_name: monitoring-node-exporter
+    restart: unless-stopped
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -262,6 +295,7 @@ services:
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: monitoring-cadvisor
+    restart: unless-stopped
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -280,3 +314,4 @@ volumes:
   arcane-data:
   prometheus-data:
   grafana-data:
+  loki-data:

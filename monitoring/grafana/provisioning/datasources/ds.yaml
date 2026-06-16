@@ -6,3 +6,8 @@ datasources:
     access: proxy
     url: http://monitoring-prometheus:9090
     isDefault: true
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://monitoring-loki:3100
