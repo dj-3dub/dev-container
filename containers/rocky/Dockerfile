@@ -14,9 +14,11 @@ RUN dnf -y install \
     dnf-plugins-core \
     && dnf config-manager --set-enabled crb \
     && dnf -y install epel-release \
+    # Add official Docker repository
+    && dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo \
     && dnf -y upgrade
 
-# --- Core tools ---
+# --- Core tools & Docker ---
 RUN dnf -y install \
     bash-completion \
     zsh \
@@ -53,6 +55,10 @@ RUN dnf -y install \
     podman \
     buildah \
     skopeo \
+    # Docker CLI tools
+    docker-ce-cli \
+    docker-buildx-plugin \
+    docker-compose-plugin \
     iproute \
     iputils \
     bind-utils \
@@ -98,6 +104,7 @@ ZSH_THEME="robbyrussell"
 
 plugins=(
   git
+  docker
   zsh-autosuggestions
   zsh-history-substring-search
   zsh-syntax-highlighting

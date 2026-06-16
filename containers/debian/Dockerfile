@@ -6,22 +6,24 @@ FROM debian:trixie-slim
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    # --- Essentials & Apt setup ---
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release \
     # --- Locale & shell ---
     locales \
     bash-completion \
     zsh \
     git \
-    curl \
     wget \
     fzf \
     # --- SSH ---
     openssh-client \
-    # --- Python (apt) ---
+    # --- Python ---
     python3 \
     python3-pip \
     python3-venv \
-    # --- Docker CLI ---
-    docker.io \
     # --- Monitoring ---
     procps \
     htop \
@@ -38,12 +40,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # --- Storage / perf ---
     iotop \
     stress-ng \
-    # --- Essentials ---
+    # --- Editors ---
     vim \
     nano \
-    ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Add Docker's official GPG key and repository
+RUN install -m 0755 -d /etc/apt/keyrings && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc && \
+    chmod a+r /etc/apt/keyrings/docker.asc && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+    apt-get update && apt-get install -y docker-ce-cli docker-buildx-plugin docker-compose-plugin && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Locale
 RUN sed -i 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
@@ -61,7 +70,7 @@ RUN git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
     git clone --depth=1 https://github.com/zsh-users/zsh-history-substring-search \
       /root/.oh-my-zsh/custom/plugins/zsh-history-substring-search
 
-# Zsh config (shared with Ubuntu)
+# Zsh config
 RUN cat > /root/.zshrc <<'EOF'
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="robbyrussell"
@@ -76,12 +85,10 @@ plugins=(
 
 source "$ZSH/oh-my-zsh.sh"
 
-# Aliases
 alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
 
-# fzf keybindings (safe for Debian/Ubuntu)
 if [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]; then
   source /usr/share/doc/fzf/examples/key-bindings.zsh
 fi
