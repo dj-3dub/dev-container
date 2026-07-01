@@ -172,6 +172,10 @@ up-mon:
 	@echo "📊 Starting Monitoring Stack..."
 	docker compose --profile monitoring up -d
 
+up-arcane:
+	@echo "🔮 Spinning up Arcane (isolated)..."
+	docker compose $(DEV_PROFILES) up -d arcane
+
 up-all:
 	@echo "🌐 Starting full SRE Jungle..."
 	docker compose $(COMPOSE_PROFILES) up -d
